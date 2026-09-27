@@ -1,0 +1,16 @@
+{
+  "name": "minecraft-server-panel",
+  "version": "1.0.0",
+  "description": "Minecraft 1.20.1 server panel with FRP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "multer": "^2.4.0"
+  }
+}

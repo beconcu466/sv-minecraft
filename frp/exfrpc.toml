@@ -1,0 +1,10 @@
+serverAddr = "minecraft123.exfrp.zip"
+serverPort = 7000
+
+[[proxies]]
+apiKey = "hNgfQOUZUXWkeUuVBhBckDtvuKGSZniUIVPnkCzuKMTYpCBYtwMEIioEmqAweHzs"
+domain = "minecraft123.exfrp.zip"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 25565
+remotePort = 34149

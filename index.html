@@ -1,0 +1,2172 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft Server Panel</title>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #06080d;
+      --border: rgba(255,255,255,.07);
+      --border-2: rgba(255,255,255,.12);
+      --text: #f5f7fa;
+      --muted: #8993a3;
+      --green: #3ddc84;
+      --green-2: #1ea75c;
+      --red: #ff5c70;
+      --yellow: #ffc857;
+      --blue: #5ca9ff;
+      --shadow: 0 20px 60px rgba(0,0,0,.4);
+      --shadow-sm: 0 8px 24px rgba(0,0,0,.25);
+      --glow-green: 0 0 24px rgba(61,220,132,.35);
+      --glow-red: 0 0 24px rgba(255,92,112,.35);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(61,220,132,.10), transparent 35%),
+        radial-gradient(circle at 80% 5%, rgba(92,169,255,.08), transparent 30%),
+        radial-gradient(circle at 50% 100%, rgba(167,139,250,.05), transparent 40%);
+      pointer-events: none;
+      z-index: 0;
+      animation: bgFloat 20s ease-in-out infinite;
+    }
+
+    @keyframes bgFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-20px) scale(1.05); }
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; border: 0; background: none; color: inherit; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .5; }
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes progressShine {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    @keyframes uploadFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: min(1240px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 28px 0 60px;
+      animation: fadeIn .4s ease both;
+    }
+
+    /* HEADER */
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 26px;
+      animation: fadeInUp .5s ease both;
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; }
+
+    .brand-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #2fbd6f, #16844a);
+      box-shadow: 0 10px 30px rgba(45, 190, 111, .25);
+      font-size: 24px;
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .brand-icon:hover { transform: rotate(-8deg) scale(1.08); }
+
+    .brand h1 {
+      font-size: 20px;
+      letter-spacing: -.02em;
+      font-weight: 800;
+    }
+
+    .brand span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12.5px;
+    }
+
+    .connection {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255,255,255,.03);
+      font-size: 13px;
+      backdrop-filter: blur(10px);
+      transition: .3s ease;
+    }
+
+    .connection:hover { border-color: var(--border-2); }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 12px rgba(61,220,132,.7);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 32px 34px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: linear-gradient(145deg, rgba(20,29,40,.92), rgba(10,14,20,.92));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+      margin-bottom: 22px;
+      animation: fadeInUp .55s ease both;
+      animation-delay: .05s;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 380px;
+      height: 380px;
+      right: -120px;
+      top: -160px;
+      background: radial-gradient(circle, rgba(61,220,132,.16), transparent 65%);
+      pointer-events: none;
+      animation: bgFloat 8s ease-in-out infinite;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: center;
+      position: relative;
+    }
+
+    .hero-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .public-address {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .ip {
+      font-size: clamp(28px, 4.5vw, 48px);
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -.045em;
+      word-break: break-all;
+      background: linear-gradient(135deg, #fff, #b8c4d6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .address-hint {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(61,220,132,.28);
+      background: rgba(61,220,132,.09);
+      color: #bff7d7;
+      padding: 11px 16px;
+      border-radius: 11px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all .22s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .copy-btn:hover {
+      background: rgba(61,220,132,.18);
+      border-color: rgba(61,220,132,.5);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(61,220,132,.25);
+    }
+
+    .copy-btn:active { transform: translateY(0) scale(.97); }
+
+    .hero-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 20px 26px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.02);
+      min-width: 140px;
+    }
+
+    .hero-badge-icon {
+      font-size: 32px;
+      line-height: 1;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,.4));
+      transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .hero-badge:hover .hero-badge-icon { transform: scale(1.15) rotate(8deg); }
+
+    .hero-badge-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-weight: 600;
+    }
+
+    .hero-badge-value {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--green);
+    }
+
+    /* DASHBOARD */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      margin-bottom: 22px;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard { grid-template-columns: 1fr; }
+      .hero-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: rgba(13,18,26,.75);
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(20px);
+      overflow: hidden;
+      animation: fadeInUp .6s ease both;
+      transition: border-color .3s ease;
+    }
+
+    .card:hover { border-color: var(--border-2); }
+
+    .dashboard .card:nth-child(1) { animation-delay: .1s; }
+    .dashboard .card:nth-child(2) { animation-delay: .15s; }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      padding: 20px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      letter-spacing: -.01em;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .card-title::before {
+      content: "";
+      width: 4px;
+      height: 16px;
+      border-radius: 2px;
+      background: linear-gradient(180deg, var(--green), var(--green-2));
+      box-shadow: 0 0 12px rgba(61,220,132,.5);
+    }
+
+    .card-subtitle {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      padding-left: 13px;
+    }
+
+    .card-body { padding: 22px; }
+
+    /* STATUS */
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 18px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.02);
+      border: 1px solid var(--border);
+    }
+
+    .status-main {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .status-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #4a5563;
+      transition: .3s ease;
+      position: relative;
+    }
+
+    .status-dot::after {
+      content: "";
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      opacity: 0;
+      transition: .3s ease;
+    }
+
+    .status-dot.ready {
+      background: var(--green);
+      box-shadow: var(--glow-green);
+    }
+
+    .status-dot.ready::after {
+      background: rgba(61,220,132,.25);
+      opacity: 1;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    .status-dot.starting {
+      background: var(--yellow);
+      box-shadow: 0 0 18px rgba(255,200,87,.6);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    .status-dot.error {
+      background: var(--red);
+      box-shadow: var(--glow-red);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    .status-name {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -.01em;
+    }
+
+    .status-detail {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* BUTTONS */
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .buttons { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .btn {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      background: rgba(255,255,255,.045);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: .01em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: all .22s cubic-bezier(.34,1.56,.64,1);
+      min-width: 0;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      border-color: var(--border-2);
+      background: rgba(255,255,255,.08);
+      box-shadow: 0 10px 24px rgba(0,0,0,.3);
+    }
+
+    .btn:active:not(:disabled) { transform: translateY(0) scale(.97); }
+
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    .btn.green {
+      border-color: rgba(61,220,132,.3);
+      background: linear-gradient(135deg, rgba(61,220,132,.15), rgba(61,220,132,.08));
+      color: #c5f8d9;
+    }
+
+    .btn.green:hover:not(:disabled) {
+      border-color: rgba(61,220,132,.6);
+      box-shadow: 0 10px 26px rgba(61,220,132,.35), var(--glow-green);
+    }
+
+    .btn.red {
+      border-color: rgba(255,92,112,.25);
+      background: linear-gradient(135deg, rgba(255,92,112,.12), rgba(255,92,112,.05));
+      color: #ffc4cc;
+    }
+
+    .btn.red:hover:not(:disabled) {
+      border-color: rgba(255,92,112,.6);
+      box-shadow: 0 10px 26px rgba(255,92,112,.3), var(--glow-red);
+    }
+
+    .btn.danger {
+      border-color: rgba(255,92,112,.35);
+      background: linear-gradient(135deg, rgba(255,92,112,.15), rgba(255,92,112,.06));
+      color: #ffc4cc;
+    }
+
+    .btn.danger:hover:not(:disabled) {
+      border-color: rgba(255,92,112,.75);
+      background: linear-gradient(135deg, rgba(255,92,112,.25), rgba(255,92,112,.1));
+      color: #fff;
+      box-shadow: 0 10px 28px rgba(255,92,112,.4), var(--glow-red);
+    }
+
+    .btn .btn-icon { font-size: 14px; line-height: 1; flex-shrink: 0; }
+
+    .btn::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,.25);
+      transform: translate(-50%, -50%);
+      transition: width .5s ease, height .5s ease;
+    }
+
+    .btn:active::before { width: 300px; height: 300px; }
+
+    .btn.shake { animation: shake .5s ease both; }
+
+    /* PROGRESS */
+    .progress-wrap { margin-top: 20px; }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 9px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .progress {
+      width: 100%;
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #2bbd6d, #63e69a, #2bbd6d);
+      background-size: 200% 100%;
+      transition: width .45s cubic-bezier(.4,0,.2,1);
+      animation: progressShine 2s linear infinite;
+    }
+
+    /* MODE */
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      padding: 5px;
+      background: rgba(255,255,255,.035);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+    }
+
+    .mode-btn {
+      border: 0;
+      border-radius: 9px;
+      padding: 11px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px;
+      transition: all .22s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+    }
+
+    .mode-btn:hover:not(:disabled) { color: var(--text); }
+
+    .mode-btn.active {
+      background: rgba(255,255,255,.09);
+      color: var(--text);
+      box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    }
+
+    /* UPLOAD */
+    .upload-panel {
+      margin-top: 18px;
+      animation: fadeInUp .4s ease both;
+    }
+
+    .upload-box {
+      position: relative;
+      padding: 30px 22px;
+      border: 2px dashed rgba(61,220,132,.28);
+      border-radius: 16px;
+      text-align: center;
+      background: linear-gradient(180deg, rgba(61,220,132,.04), rgba(61,220,132,.005));
+      transition: all .3s ease;
+    }
+
+    .upload-box:hover {
+      border-color: rgba(61,220,132,.6);
+      background: linear-gradient(180deg, rgba(61,220,132,.09), rgba(61,220,132,.02));
+      transform: translateY(-2px);
+    }
+
+    .upload-icon {
+      font-size: 44px;
+      margin-bottom: 12px;
+      display: inline-block;
+      animation: uploadFloat 3s ease-in-out infinite;
+    }
+
+    .upload-title {
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: -.01em;
+      margin-bottom: 6px;
+    }
+
+    .upload-description {
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.6;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+
+    .upload-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      margin-top: 18px;
+      padding: 13px 26px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #2fbd6f, #16844a);
+      color: #fff;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: .01em;
+      box-shadow: 0 10px 30px rgba(45,190,111,.3);
+      transition: all .25s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .upload-btn:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 44px rgba(45,190,111,.5);
+      filter: brightness(1.08);
+    }
+
+    .upload-btn:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .upload-btn svg { width: 18px; height: 18px; }
+
+    .upload-status {
+      min-height: 20px;
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .upload-status.success { color: var(--green); }
+    .upload-status.error { color: var(--red); }
+    .upload-status.loading { color: var(--yellow); }
+
+    .warn-box {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,200,87,.25);
+      background: rgba(255,200,87,.06);
+      border-radius: 10px;
+      color: #ffe1a1;
+      font-size: 12px;
+      line-height: 1.6;
+      text-align: left;
+    }
+
+    /* CONSOLE */
+    .console {
+      margin-bottom: 22px;
+      animation: fadeInUp .7s ease both;
+      animation-delay: .2s;
+    }
+
+    .console-window {
+      height: 420px;
+      overflow-y: auto;
+      padding: 16px 18px;
+      background: #04060a;
+      font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #d7dde6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .console-window::-webkit-scrollbar { width: 8px; }
+    .console-window::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,.08);
+      border-radius: 4px;
+    }
+
+    .console-command {
+      display: flex;
+      gap: 8px;
+      padding: 14px;
+      border-top: 1px solid var(--border);
+      background: #080b10;
+    }
+
+    .console-command input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      outline: none;
+      background: rgba(255,255,255,.035);
+      color: var(--text);
+      font-size: 13px;
+      transition: .2s ease;
+    }
+
+    .console-command input:focus {
+      border-color: rgba(61,220,132,.5);
+      box-shadow: 0 0 0 3px rgba(61,220,132,.1);
+    }
+
+    .console-command .btn { padding: 11px 22px; border-radius: 10px; }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 999;
+      min-width: 280px;
+      max-width: 380px;
+      padding: 14px 18px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(15,20,28,.96);
+      box-shadow: 0 24px 60px rgba(0,0,0,.5);
+      backdrop-filter: blur(20px);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transform: translateY(24px) scale(.96);
+      opacity: 0;
+      pointer-events: none;
+      transition: all .3s cubic-bezier(.34,1.56,.64,1);
+      overflow: hidden;
+    }
+
+    .toast.show {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+
+    .toast-icon { font-size: 20px; line-height: 1; flex-shrink: 0; }
+
+    .toast.success { border-color: rgba(61,220,132,.4); }
+    .toast.success .toast-icon { color: var(--green); }
+    .toast.error { border-color: rgba(255,92,112,.4); }
+    .toast.error .toast-icon { color: var(--red); }
+    .toast.info { border-color: rgba(92,169,255,.4); }
+    .toast.info .toast-icon { color: var(--blue); }
+    .toast.warning { border-color: rgba(255,200,87,.5); }
+    .toast.warning .toast-icon { color: var(--yellow); }
+    .toast.warning .toast-progress { background: var(--yellow); }
+
+    .toast-progress {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      height: 2px;
+      background: var(--green);
+      width: 100%;
+      transform-origin: left;
+      animation: toastProgress 3.5s linear forwards;
+    }
+
+    .toast.error .toast-progress { background: var(--red); }
+    .toast.info .toast-progress { background: var(--blue); }
+
+    @keyframes toastProgress {
+      from { transform: scaleX(1); }
+      to { transform: scaleX(0); }
+    }
+
+    /* BIG TOAST */
+    .big-toast-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0,0,0,.5);
+      backdrop-filter: blur(6px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .35s ease;
+    }
+
+    .big-toast-backdrop.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .big-toast {
+      width: min(520px, 100%);
+      border: 1px solid rgba(61,220,132,.4);
+      border-radius: 24px;
+      background: linear-gradient(160deg, #0f1a22, #08121a);
+      box-shadow:
+        0 40px 120px rgba(0,0,0,.75),
+        0 0 60px rgba(61,220,132,.25);
+      padding: 34px 32px 28px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transform: scale(.85) translateY(30px);
+      opacity: 0;
+      transition: all .45s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .big-toast-backdrop.show .big-toast {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+
+    .big-toast::before {
+      content: "";
+      position: absolute;
+      top: -60%;
+      left: -60%;
+      width: 220%;
+      height: 220%;
+      background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        rgba(61,220,132,.15) 60deg,
+        transparent 120deg,
+        transparent 360deg
+      );
+      animation: spin 4s linear infinite;
+      pointer-events: none;
+    }
+
+    .big-toast::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 23px;
+      background: linear-gradient(160deg, #0f1a22, #08121a);
+      pointer-events: none;
+    }
+
+    .big-toast > * { position: relative; z-index: 1; }
+
+    .big-toast-icon {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 42px;
+      background: radial-gradient(circle, rgba(61,220,132,.28), transparent 70%);
+      border: 2px solid rgba(61,220,132,.5);
+      box-shadow:
+        0 0 40px rgba(61,220,132,.5),
+        inset 0 0 30px rgba(61,220,132,.15);
+      animation: bigToastIconPulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes bigToastIconPulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow:
+          0 0 40px rgba(61,220,132,.5),
+          inset 0 0 30px rgba(61,220,132,.15);
+      }
+      50% {
+        transform: scale(1.06);
+        box-shadow:
+          0 0 60px rgba(61,220,132,.75),
+          inset 0 0 40px rgba(61,220,132,.25);
+      }
+    }
+
+    .big-toast-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ffffff, #86ffbc);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .big-toast-desc {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+      margin-bottom: 6px;
+    }
+
+    .big-toast-ip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 11px 18px;
+      border-radius: 12px;
+      background: rgba(61,220,132,.1);
+      border: 1px solid rgba(61,220,132,.35);
+      color: #bff7d7;
+      font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      cursor: pointer;
+      transition: .2s ease;
+      word-break: break-all;
+    }
+
+    .big-toast-ip:hover {
+      background: rgba(61,220,132,.18);
+      border-color: rgba(61,220,132,.6);
+      transform: scale(1.02);
+    }
+
+    .big-toast-actions {
+      margin-top: 24px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .big-toast-actions .btn {
+      padding: 12px 22px;
+      border-radius: 11px;
+      font-size: 13.5px;
+    }
+
+    .big-toast-sparkles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+      border-radius: 24px;
+    }
+
+    .sparkle {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #86ffbc;
+      box-shadow: 0 0 12px rgba(61,220,132,.9);
+      animation: sparkleFloat 3s linear infinite;
+      opacity: 0;
+    }
+
+    @keyframes sparkleFloat {
+      0% { opacity: 0; transform: translateY(0) scale(.5); }
+      20% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-140px) scale(1.2); }
+    }
+
+    /* MODAL */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s ease;
+    }
+
+    .modal-backdrop.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      width: min(440px, 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: linear-gradient(160deg, #131a26, #0c1018);
+      box-shadow: 0 40px 100px rgba(0,0,0,.7);
+      overflow: hidden;
+      transform: scale(.92) translateY(20px);
+      opacity: 0;
+      transition: all .3s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .modal-backdrop.show .modal {
+      transform: scale(1) translateY(0);
+      opacity: 1;
+    }
+
+    .modal-header { padding: 24px 24px 0; text-align: center; }
+
+    .modal-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 14px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 30px;
+      background: radial-gradient(circle, rgba(255,92,112,.2), transparent 70%);
+      border: 1px solid rgba(255,92,112,.3);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .modal-title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -.02em;
+      margin-bottom: 8px;
+    }
+
+    .modal-desc {
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    .modal-desc strong {
+      color: #ffc4cc;
+      font-weight: 700;
+      background: rgba(255,92,112,.1);
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-family: "Cascadia Code", monospace;
+      font-size: 12.5px;
+    }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 22px 24px 24px;
+    }
+
+    .modal-actions .btn { padding: 13px; }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 640px) {
+      .container { width: min(100% - 24px, 1240px); padding: 18px 0 40px; }
+      .topbar { flex-direction: column; align-items: flex-start; }
+      .hero { padding: 22px; }
+      .card-header { padding: 16px 18px; }
+      .card-body { padding: 18px; }
+      .toast { right: 12px; left: 12px; bottom: 12px; max-width: none; }
+      .big-toast { padding: 26px 22px 22px; }
+      .big-toast-title { font-size: 20px; }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">⛏</div>
+      <div>
+        <h1>Minecraft Server</h1>
+        <span>Server Control Panel</span>
+      </div>
+    </div>
+
+    <div class="connection">
+      <span class="connection-dot"></span>
+      <span id="connectionText">Panel Online</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-label">Địa chỉ máy chủ</div>
+
+        <div class="public-address">
+          <div class="ip" id="publicAddress">Chưa kết nối</div>
+          <button class="copy-btn" id="copyIpBtn" type="button">
+            <span>📋</span>
+            <span id="copyIpText">Copy IP:Port</span>
+          </button>
+        </div>
+
+        <div class="address-hint">
+          Chỉ hiển thị khi FRP nhận được <strong>start proxy success</strong>.
+        </div>
+      </div>
+
+      <div class="hero-badge">
+        <div class="hero-badge-icon">🌐</div>
+        <div class="hero-badge-label">Trạng thái</div>
+        <div class="hero-badge-value" id="heroBadgeValue">Chờ kết nối</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="dashboard">
+
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Minecraft Server</div>
+          <div class="card-subtitle" id="jarText">Server chưa được tải</div>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="status-row">
+          <div class="status-main">
+            <div class="status-dot" id="minecraftDot"></div>
+            <div>
+              <div class="status-name" id="minecraftStatus">Stopped</div>
+              <div class="status-detail" id="minecraftDetail">Server chưa chạy</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="buttons">
+          <button class="btn green" id="startBtn" type="button">
+            <span class="btn-icon">▶</span>
+            Start
+          </button>
+          <button class="btn red" id="stopBtn" type="button">
+            <span class="btn-icon">■</span>
+            Stop
+          </button>
+          <button class="btn" id="restartBtn" type="button">
+            <span class="btn-icon">↻</span>
+            Restart
+          </button>
+          <button class="btn danger" id="deleteFolderBtn" type="button">
+            <span class="btn-icon">🗑</span>
+            Delete
+          </button>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-top">
+            <span id="progressText">Chưa khởi động</span>
+            <span id="progressPercent">0%</span>
+          </div>
+          <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Server Source</div>
+          <div class="card-subtitle">Chọn cách chuẩn bị server</div>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <div class="mode-switch">
+          <button class="mode-btn active" id="autoModeBtn" type="button">
+            <span>⚡</span>
+            Auto
+          </button>
+          <button class="mode-btn" id="uploadModeBtn" type="button">
+            <span>📤</span>
+            Upload
+          </button>
+        </div>
+
+        <div class="upload-panel hidden" id="uploadPanel">
+          <div class="upload-box">
+            <div class="upload-icon">📁</div>
+            <div class="upload-title">Chọn folder Minecraft</div>
+            <div class="upload-description">
+              Chỉ lấy <strong>nội dung bên trong</strong> folder bạn chọn.
+              Giữ nguyên subfolder và file bên trong.
+            </div>
+
+            <button class="upload-btn" id="chooseFolderBtn" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Chọn Folder &amp; Upload
+            </button>
+
+            <div class="upload-status" id="uploadStatus"></div>
+
+            <div class="warn-box hidden" id="fsWarn">
+              ⚠️ Trình duyệt của bạn <strong>không hỗ trợ</strong> upload không popup.
+              Hãy dùng <strong>Chrome / Edge / Cốc Cốc</strong> phiên bản mới nhất.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <section class="card console">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Console</div>
+        <div class="card-subtitle">Minecraft + FRP logs</div>
+      </div>
+    </div>
+
+    <div class="console-window" id="console"></div>
+
+    <div class="console-command">
+      <input id="commandInput" type="text" autocomplete="off" placeholder="Nhập command Minecraft...">
+      <button class="btn green" id="commandBtn" type="button">Send</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon">✓</span>
+  <span class="toast-text" id="toastText"></span>
+  <div class="toast-progress" id="toastProgress"></div>
+</div>
+
+<!-- BIG TOAST -->
+<div class="big-toast-backdrop" id="serverReadyModal">
+  <div class="big-toast">
+    <div class="big-toast-sparkles" id="sparkles"></div>
+
+    <div class="big-toast-icon">🎉</div>
+
+    <div class="big-toast-title">Server đã sẵn sàng!</div>
+
+    <div class="big-toast-desc">
+      Minecraft server đã khởi động thành công.<br>
+      Bạn có thể kết nối ngay bây giờ.
+    </div>
+
+    <div class="big-toast-ip" id="serverReadyIp" style="display:none;">
+      <span>🌐</span>
+      <span id="serverReadyIpText">—</span>
+    </div>
+
+    <div class="big-toast-actions">
+      <button class="btn green" id="serverReadyCloseBtn" type="button">
+        <span class="btn-icon">✓</span>
+        Đóng
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-backdrop" id="deleteModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-icon">⚠️</div>
+      <div class="modal-title">Xóa folder minecraft/?</div>
+      <div class="modal-desc">
+        Hành động này sẽ xóa <strong>toàn bộ</strong> nội dung bên trong
+        <strong>minecraft/</strong>. Không thể hoàn tác.
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" id="cancelDeleteBtn" type="button">Huỷ</button>
+      <button class="btn red" id="confirmDeleteBtn" type="button">
+        <span class="btn-icon">🗑</span>
+        Xóa
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   DOM
+========================================================= */
+const publicAddress = document.getElementById("publicAddress");
+const copyIpBtn = document.getElementById("copyIpBtn");
+const copyIpText = document.getElementById("copyIpText");
+const heroBadgeValue = document.getElementById("heroBadgeValue");
+const minecraftDot = document.getElementById("minecraftDot");
+const minecraftStatus = document.getElementById("minecraftStatus");
+const minecraftDetail = document.getElementById("minecraftDetail");
+const jarText = document.getElementById("jarText");
+const startBtn = document.getElementById("startBtn");
+const stopBtn = document.getElementById("stopBtn");
+const restartBtn = document.getElementById("restartBtn");
+const deleteFolderBtn = document.getElementById("deleteFolderBtn");
+const progressBar = document.getElementById("progressBar");
+const progressText = document.getElementById("progressText");
+const progressPercent = document.getElementById("progressPercent");
+const autoModeBtn = document.getElementById("autoModeBtn");
+const uploadModeBtn = document.getElementById("uploadModeBtn");
+const uploadPanel = document.getElementById("uploadPanel");
+const chooseFolderBtn = document.getElementById("chooseFolderBtn");
+const uploadStatus = document.getElementById("uploadStatus");
+const fsWarn = document.getElementById("fsWarn");
+const consoleEl = document.getElementById("console");
+const commandInput = document.getElementById("commandInput");
+const commandBtn = document.getElementById("commandBtn");
+const toast = document.getElementById("toast");
+const toastIcon = document.getElementById("toastIcon");
+const toastText = document.getElementById("toastText");
+const toastProgress = document.getElementById("toastProgress");
+const deleteModal = document.getElementById("deleteModal");
+const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+const serverReadyModal = document.getElementById("serverReadyModal");
+const serverReadyIp = document.getElementById("serverReadyIp");
+const serverReadyIpText = document.getElementById("serverReadyIpText");
+const serverReadyCloseBtn = document.getElementById("serverReadyCloseBtn");
+const sparkles = document.getElementById("sparkles");
+
+/* =========================================================
+   STATE
+========================================================= */
+let currentPublicAddress = null;
+let currentMode = "auto";           /* Luôn auto khi khởi tạo */
+let toastTimer = null;
+let isUploading = false;
+let isDeleting = false;
+let lastNotifiedReadyToken = null;
+
+let hasServerJar = false;
+
+/* =========================================================
+   FORCE UI SANG AUTO MODE NGAY KHI LOAD TRANG
+   (Chạy trước cả khi có response từ server)
+========================================================= */
+autoModeBtn.classList.add("active");
+uploadModeBtn.classList.remove("active");
+uploadPanel.classList.add("hidden");
+
+/* =========================================================
+   TOAST
+========================================================= */
+function showToast(message, type = "success") {
+  clearTimeout(toastTimer);
+
+  const icons = {
+    success: "✓",
+    error: "✕",
+    info: "ℹ",
+    warning: "⚠"
+  };
+
+  toastIcon.textContent = icons[type] || "✓";
+  toastText.textContent = String(message || "");
+
+  toastProgress.style.animation = "none";
+  void toastProgress.offsetWidth;
+  toastProgress.style.animation = "";
+
+  toast.className = `toast show ${type}`;
+
+  toastTimer = setTimeout(() => {
+    toast.className = "toast";
+  }, 3500);
+}
+
+/* =========================================================
+   SHAKE BUTTON
+========================================================= */
+function shakeButton(btn) {
+  btn.classList.remove("shake");
+  void btn.offsetWidth;
+  btn.classList.add("shake");
+
+  setTimeout(() => {
+    btn.classList.remove("shake");
+  }, 600);
+}
+
+/* =========================================================
+   SOUND
+========================================================= */
+let audioCtx = null;
+
+function getAudioContext() {
+  if (audioCtx) return audioCtx;
+
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    audioCtx = new Ctx();
+  } catch {
+    return null;
+  }
+
+  return audioCtx;
+}
+
+function playSuccessSound() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  if (ctx.state === "suspended") {
+    ctx.resume().catch(() => {});
+  }
+
+  const now = ctx.currentTime;
+
+  const notes = [
+    { freq: 523.25, start: 0.00, dur: 0.18 },
+    { freq: 659.25, start: 0.14, dur: 0.18 },
+    { freq: 783.99, start: 0.28, dur: 0.55 }
+  ];
+
+  const masterGain = ctx.createGain();
+  masterGain.gain.value = 0.28;
+  masterGain.connect(ctx.destination);
+
+  for (const note of notes) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.value = note.freq;
+
+    const t0 = now + note.start;
+    const t1 = t0 + note.dur;
+
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(1, t0 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, t1);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+
+    osc.start(t0);
+    osc.stop(t1 + 0.05);
+  }
+}
+
+function playWarningSound() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  if (ctx.state === "suspended") {
+    ctx.resume().catch(() => {});
+  }
+
+  const now = ctx.currentTime;
+
+  const notes = [
+    { freq: 392.00, start: 0.00, dur: 0.15 },
+    { freq: 349.23, start: 0.16, dur: 0.28 }
+  ];
+
+  const masterGain = ctx.createGain();
+  masterGain.gain.value = 0.22;
+  masterGain.connect(ctx.destination);
+
+  for (const note of notes) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "triangle";
+    osc.frequency.value = note.freq;
+
+    const t0 = now + note.start;
+    const t1 = t0 + note.dur;
+
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(1, t0 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, t1);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+
+    osc.start(t0);
+    osc.stop(t1 + 0.05);
+  }
+}
+
+/* =========================================================
+   SPARKLES
+========================================================= */
+function spawnSparkles() {
+  sparkles.innerHTML = "";
+
+  const COUNT = 20;
+
+  for (let i = 0; i < COUNT; i++) {
+    const s = document.createElement("div");
+    s.className = "sparkle";
+
+    s.style.left = Math.random() * 100 + "%";
+    s.style.bottom = "10%";
+    s.style.animationDelay = (Math.random() * 3) + "s";
+    s.style.animationDuration = (2 + Math.random() * 2) + "s";
+
+    const size = 4 + Math.random() * 6;
+    s.style.width = size + "px";
+    s.style.height = size + "px";
+
+    sparkles.appendChild(s);
+  }
+}
+
+/* =========================================================
+   BIG TOAST
+========================================================= */
+function showServerReadyNotification(publicIp) {
+  if (publicIp) {
+    serverReadyIpText.textContent = publicIp;
+    serverReadyIp.style.display = "inline-flex";
+  } else {
+    serverReadyIp.style.display = "none";
+  }
+
+  spawnSparkles();
+
+  serverReadyModal.classList.add("show");
+
+  playSuccessSound();
+
+  clearTimeout(showServerReadyNotification._timer);
+  showServerReadyNotification._timer = setTimeout(() => {
+    serverReadyModal.classList.remove("show");
+  }, 10000);
+}
+
+function closeServerReadyNotification() {
+  serverReadyModal.classList.remove("show");
+}
+
+serverReadyCloseBtn.addEventListener("click", closeServerReadyNotification);
+
+serverReadyModal.addEventListener("click", (e) => {
+  if (e.target === serverReadyModal) {
+    closeServerReadyNotification();
+  }
+});
+
+serverReadyIp.addEventListener("click", async () => {
+  const ip = serverReadyIpText.textContent;
+  if (!ip || ip === "—") return;
+
+  try {
+    await navigator.clipboard.writeText(ip);
+    showToast("Đã copy IP:Port.", "success");
+  } catch {}
+});
+
+/* =========================================================
+   API
+========================================================= */
+async function api(url, options = {}) {
+  const response = await fetch(url, options);
+
+  let data = null;
+  try { data = await response.json(); } catch { data = {}; }
+
+  if (!response.ok) {
+    throw new Error(
+      data.error || data.message || `HTTP ${response.status}`
+    );
+  }
+
+  return data;
+}
+
+/* =========================================================
+   STATUS UI
+========================================================= */
+function updateModeUI(mode) {
+  currentMode = mode === "upload" ? "upload" : "auto";
+  autoModeBtn.classList.toggle("active", currentMode === "auto");
+  uploadModeBtn.classList.toggle("active", currentMode === "upload");
+  uploadPanel.classList.toggle("hidden", currentMode !== "upload");
+}
+
+function updateMinecraftUI(minecraft) {
+  if (!minecraft) return;
+
+  if (typeof minecraft.hasServer === "boolean") {
+    hasServerJar = minecraft.hasServer;
+  }
+
+  minecraftDot.className = "status-dot";
+
+  if (minecraft.status === "ready") {
+    minecraftDot.classList.add("ready");
+    heroBadgeValue.textContent = "Online";
+    heroBadgeValue.style.color = "var(--green)";
+  } else if (minecraft.status === "starting" || minecraft.running) {
+    minecraftDot.classList.add("starting");
+    heroBadgeValue.textContent = "Đang khởi động";
+    heroBadgeValue.style.color = "var(--yellow)";
+  } else if (minecraft.status === "error") {
+    minecraftDot.classList.add("error");
+    heroBadgeValue.textContent = "Lỗi";
+    heroBadgeValue.style.color = "var(--red)";
+  } else {
+    heroBadgeValue.textContent = "Offline";
+    heroBadgeValue.style.color = "var(--muted)";
+  }
+
+  const statusMap = {
+    stopped: "Stopped",
+    starting: "Starting",
+    ready: "Online",
+    error: "Error"
+  };
+
+  minecraftStatus.textContent =
+    statusMap[minecraft.status] || minecraft.status || "Stopped";
+
+  if (minecraft.status === "ready") {
+    minecraftDetail.textContent = "Minecraft đang sẵn sàng";
+  } else if (minecraft.status === "starting") {
+    minecraftDetail.textContent =
+      minecraft.progressText || "Đang khởi động...";
+  } else if (minecraft.status === "error") {
+    minecraftDetail.textContent = minecraft.error || "Có lỗi xảy ra";
+  } else {
+    minecraftDetail.textContent = "Server chưa chạy";
+  }
+
+  if (minecraft.jar) {
+    jarText.textContent = `JAR: ${minecraft.jar}`;
+  } else {
+    jarText.textContent = "Chưa xác định server JAR";
+  }
+
+  const progress = Number(minecraft.progress || 0);
+  progressBar.style.width = `${progress}%`;
+  progressPercent.textContent = `${progress}%`;
+  progressText.textContent = minecraft.progressText || "Chưa khởi động";
+
+  const running = !!minecraft.running;
+  const busy = isUploading || isDeleting;
+
+  startBtn.disabled = running || busy;
+  stopBtn.disabled = !running || busy;
+  restartBtn.disabled = !running || busy;
+  deleteFolderBtn.disabled = running || busy;
+  autoModeBtn.disabled = running || busy;
+  uploadModeBtn.disabled = running || busy;
+  chooseFolderBtn.disabled = running || busy;
+}
+
+function updateFrpUI(frp) {
+  if (!frp) return;
+
+  if (frp.ready && frp.successSeen && frp.publicAddress) {
+    currentPublicAddress = frp.publicAddress;
+    publicAddress.textContent = frp.publicAddress;
+    return;
+  }
+
+  currentPublicAddress = null;
+  publicAddress.textContent = "Đang chờ FRP...";
+}
+
+function checkServerReadyNotification(minecraft, frp) {
+  if (!minecraft) return;
+
+  const token = minecraft.startupCompletedAt || null;
+
+  if (!token) {
+    if (lastNotifiedReadyToken) {
+      lastNotifiedReadyToken = null;
+    }
+    return;
+  }
+
+  if (token === lastNotifiedReadyToken) return;
+
+  lastNotifiedReadyToken = token;
+
+  const ip =
+    frp && frp.ready && frp.successSeen && frp.publicAddress
+      ? frp.publicAddress
+      : null;
+
+  setTimeout(() => {
+    showServerReadyNotification(ip);
+  }, 300);
+}
+
+async function refreshStatus() {
+  try {
+    const data = await api("/api/status");
+    updateModeUI(data.mode);
+    updateMinecraftUI(data.minecraft);
+    updateFrpUI(data.frp);
+    checkServerReadyNotification(data.minecraft, data.frp);
+  } catch (error) {
+    console.error("Status error:", error);
+  }
+}
+
+/* =========================================================
+   LOGS
+========================================================= */
+function formatLogEntry(entry) {
+  if (typeof entry === "string") return entry;
+  if (!entry || typeof entry !== "object") return String(entry ?? "");
+
+  const time = entry.time ? `[${entry.time}] ` : "";
+  const source = entry.source ? `[${entry.source}] ` : "";
+  const stream =
+    entry.stream && entry.stream !== "stdout" ? `[${entry.stream}] ` : "";
+  const text =
+    entry.text ?? entry.message ?? entry.line ?? JSON.stringify(entry);
+
+  return time + source + stream + text;
+}
+
+function renderLogs(logs) {
+  const array = Array.isArray(logs) ? logs : [];
+  consoleEl.textContent = array.map(formatLogEntry).join("\n");
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+async function refreshLogs() {
+  try {
+    const data = await api("/api/logs");
+    renderLogs(data.logs);
+  } catch (error) {
+    console.error("Logs error:", error);
+  }
+}
+
+/* =========================================================
+   COPY IP
+========================================================= */
+copyIpBtn.addEventListener("click", async () => {
+  if (!currentPublicAddress) {
+    showToast("FRP chưa sẵn sàng.", "error");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(currentPublicAddress);
+    showToast("Đã copy IP:Port.", "success");
+    copyIpText.textContent = "Đã Copy ✓";
+    setTimeout(() => { copyIpText.textContent = "Copy IP:Port"; }, 1600);
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = currentPublicAddress;
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    try {
+      document.execCommand("copy");
+      showToast("Đã copy IP:Port.", "success");
+    } catch {
+      showToast("Không thể copy IP:Port.", "error");
+    }
+
+    textarea.remove();
+  }
+});
+
+/* =========================================================
+   MODE
+========================================================= */
+async function changeMode(mode) {
+  try {
+    await api("/api/mode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mode })
+    });
+
+    updateModeUI(mode);
+
+    showToast(
+      mode === "upload"
+        ? "Đã chuyển sang Upload mode."
+        : "Đã chuyển sang Auto mode.",
+      "info"
+    );
+  } catch (error) {
+    showToast(error.message, "error");
+    await refreshStatus();
+  }
+}
+
+autoModeBtn.addEventListener("click", () => {
+  if (currentMode !== "auto" && !isUploading && !isDeleting) changeMode("auto");
+});
+
+uploadModeBtn.addEventListener("click", () => {
+  if (currentMode !== "upload" && !isUploading && !isDeleting) changeMode("upload");
+});
+
+/* =========================================================
+   UPLOAD
+========================================================= */
+async function collectFilesFromDirectory(dirHandle, pathPrefix = "") {
+  const out = [];
+
+  for await (const entry of dirHandle.values()) {
+    const entryPath = pathPrefix
+      ? `${pathPrefix}/${entry.name}`
+      : entry.name;
+
+    if (entry.kind === "file") {
+      const file = await entry.getFile();
+      out.push({ file, path: entryPath });
+    } else if (entry.kind === "directory") {
+      const nested = await collectFilesFromDirectory(entry, entryPath);
+      out.push(...nested);
+    }
+  }
+
+  return out;
+}
+
+function supportsFileSystemAccess() {
+  return typeof window.showDirectoryPicker === "function";
+}
+
+if (!supportsFileSystemAccess()) {
+  fsWarn.classList.remove("hidden");
+}
+
+chooseFolderBtn.addEventListener("click", async () => {
+  if (isUploading || isDeleting) return;
+
+  if (!supportsFileSystemAccess()) {
+    fsWarn.classList.remove("hidden");
+    showToast(
+      "Trình duyệt không hỗ trợ. Dùng Chrome/Edge/Cốc Cốc.",
+      "error"
+    );
+    return;
+  }
+
+  let dirHandle;
+
+  try {
+    dirHandle = await window.showDirectoryPicker({
+      mode: "read",
+      id: "minecraft-folder"
+    });
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    showToast("Không mở được folder: " + err.message, "error");
+    return;
+  }
+
+  if (!dirHandle) return;
+
+  const rootFolderName = dirHandle.name;
+
+  isUploading = true;
+  chooseFolderBtn.disabled = true;
+  deleteFolderBtn.disabled = true;
+  autoModeBtn.disabled = true;
+  uploadModeBtn.disabled = true;
+  startBtn.disabled = true;
+
+  uploadStatus.className = "upload-status loading";
+  uploadStatus.textContent = `Đang đọc folder "${rootFolderName}"...`;
+
+  try {
+    const entries = await collectFilesFromDirectory(dirHandle, "");
+
+    if (!entries.length) {
+      throw new Error("Folder không có file.");
+    }
+
+    uploadStatus.textContent =
+      `Đang chuẩn bị ${entries.length} file...`;
+
+    if (currentMode !== "upload") {
+      try {
+        await api("/api/mode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: "upload" })
+        });
+        updateModeUI("upload");
+      } catch (err) {
+        console.warn("Mode switch warning:", err.message);
+      }
+    }
+
+    const formData = new FormData();
+
+    for (const entry of entries) {
+      formData.append("files", entry.file, entry.path);
+    }
+
+    uploadStatus.textContent = `Đang upload ${entries.length} file...`;
+
+    const response = await fetch("/api/upload-folder", {
+      method: "POST",
+      body: formData
+    });
+
+    let data = {};
+    try { data = await response.json(); } catch {}
+
+    if (!response.ok) {
+      throw new Error(
+        data.error || `Upload failed: HTTP ${response.status}`
+      );
+    }
+
+    uploadStatus.className = "upload-status success";
+    uploadStatus.textContent =
+      `Upload hoàn tất — ${data.files || entries.length} file.`;
+
+    showToast(
+      `Đã upload nội dung folder "${rootFolderName}".`,
+      "success"
+    );
+  } catch (error) {
+    console.error("Upload error:", error);
+    uploadStatus.className = "upload-status error";
+    uploadStatus.textContent = `Upload thất bại: ${error.message}`;
+    showToast(error.message, "error");
+  } finally {
+    isUploading = false;
+    await refreshStatus();
+    await refreshLogs();
+  }
+});
+
+/* =========================================================
+   DELETE FOLDER
+========================================================= */
+deleteFolderBtn.addEventListener("click", () => {
+  if (isUploading || isDeleting) return;
+  deleteModal.classList.add("show");
+});
+
+cancelDeleteBtn.addEventListener("click", () => {
+  deleteModal.classList.remove("show");
+});
+
+deleteModal.addEventListener("click", (e) => {
+  if (e.target === deleteModal) {
+    deleteModal.classList.remove("show");
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (deleteModal.classList.contains("show")) {
+      deleteModal.classList.remove("show");
+    }
+    if (serverReadyModal.classList.contains("show")) {
+      serverReadyModal.classList.remove("show");
+    }
+  }
+});
+
+confirmDeleteBtn.addEventListener("click", async () => {
+  deleteModal.classList.remove("show");
+
+  if (isUploading || isDeleting) return;
+
+  isDeleting = true;
+  deleteFolderBtn.disabled = true;
+  chooseFolderBtn.disabled = true;
+  autoModeBtn.disabled = true;
+  uploadModeBtn.disabled = true;
+  startBtn.disabled = true;
+
+  const originalHTML = deleteFolderBtn.innerHTML;
+  deleteFolderBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+      stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+      stroke-linejoin="round" style="animation: spin 1s linear infinite;">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </svg>
+    Đang xóa...
+  `;
+
+  try {
+    const data = await api("/api/delete-folder", { method: "POST" });
+
+    showToast(
+      `Đã xóa folder minecraft/ (${data.deleted || 0} mục).`,
+      "success"
+    );
+
+    lastNotifiedReadyToken = null;
+  } catch (error) {
+    console.error("Delete error:", error);
+    showToast(error.message, "error");
+  } finally {
+    isDeleting = false;
+    deleteFolderBtn.innerHTML = originalHTML;
+
+    await refreshStatus();
+    await refreshLogs();
+  }
+});
+
+/* =========================================================
+   START — Có validation cho Upload mode
+========================================================= */
+startBtn.addEventListener("click", async () => {
+  if (currentMode === "upload" && !hasServerJar) {
+    shakeButton(startBtn);
+    playWarningSound();
+
+    showToast(
+      "Vui lòng upload folder Minecraft trước khi Start server.",
+      "warning"
+    );
+
+    chooseFolderBtn.focus?.();
+
+    return;
+  }
+
+  startBtn.disabled = true;
+  getAudioContext();
+
+  try {
+    await api("/api/start", { method: "POST" });
+    showToast("Đã gửi lệnh Start.", "success");
+
+    await refreshStatus();
+    await refreshLogs();
+  } catch (error) {
+    showToast(error.message, "error");
+    await refreshStatus();
+    await refreshLogs();
+  }
+});
+
+/* =========================================================
+   STOP
+========================================================= */
+stopBtn.addEventListener("click", async () => {
+  stopBtn.disabled = true;
+
+  try {
+    await api("/api/stop", { method: "POST" });
+    showToast("Server đã được stop.", "success");
+
+    lastNotifiedReadyToken = null;
+
+    await refreshStatus();
+    await refreshLogs();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+});
+
+/* =========================================================
+   RESTART — cũng cần validation
+========================================================= */
+restartBtn.addEventListener("click", async () => {
+  if (currentMode === "upload" && !hasServerJar) {
+    shakeButton(restartBtn);
+    playWarningSound();
+
+    showToast(
+      "Vui lòng upload folder Minecraft trước khi Restart server.",
+      "warning"
+    );
+
+    chooseFolderBtn.focus?.();
+    return;
+  }
+
+  restartBtn.disabled = true;
+  getAudioContext();
+
+  try {
+    await api("/api/restart", { method: "POST" });
+    showToast("Đã gửi lệnh Restart.", "success");
+
+    lastNotifiedReadyToken = null;
+
+    await refreshStatus();
+    await refreshLogs();
+  } catch (error) {
+    showToast(error.message, "error");
+    await refreshStatus();
+    await refreshLogs();
+  }
+});
+
+/* =========================================================
+   COMMAND
+========================================================= */
+async function sendCommand() {
+  const command = commandInput.value.trim();
+  if (!command) return;
+
+  try {
+    await api("/api/command", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ command })
+    });
+
+    commandInput.value = "";
+    await refreshLogs();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+
+commandBtn.addEventListener("click", sendCommand);
+
+commandInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    sendCommand();
+  }
+});
+
+/* =========================================================
+   POLLING
+========================================================= */
+refreshStatus();
+refreshLogs();
+
+setInterval(refreshStatus, 1000);
+setInterval(refreshLogs, 1000);
+
+</script>
+
+</body>
+</html>
